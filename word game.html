@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Word Pronunciation Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: #FF4081;
+      margin-bottom: 30px;
+    }
+
+    #word {
+      font-size: 48px;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+
+    button {
+      font-size: 24px;
+      background-color: #FF4081;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #E91E63;
+    }
+
+    .correct {
+      font-size: 36px;
+      color: #4CAF50;
+      animation: flash 1s infinite;
+    }
+
+    @keyframes flash {
+      0% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .microphone-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #ccc;
+      display: inline-block;
+      margin-left: 5px;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        background-color: #FF4081;
+      }
+
+      50% {
+        transform: scale(1.2);
+      }
+
+      100% {
+        transform: scale(1);
+        background-color: #FF4081;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Word Pronunciation Game</h1>
+  <div id="word"></div>
+  <button onclick="toggleListening()">Toggle Listening</button>
+  <span id="microphone-indicator" class="microphone-indicator"></span>
+
+  <script>
+    // Array of My Little Pony character names
+    var words = ['Twilight Sparkle', 'Rainbow Dash', 'Pinkie Pie', 'Rarity', 'Applejack', 'Fluttershy', 'Spike'];
+
+    // Display a random word from the array
+    var wordIndex = Math.floor(Math.random() * words.length);
+    var randomWord = words[wordIndex];
+    document.getElementById('word').textContent = randomWord;
+
+    // Initialize speech recognition
+    var recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onstart = function() {
+      document.getElementById('microphone-indicator').style.animation = 'pulse 1s infinite';
+    };
+    recognition.onend = function() {
+      document.getElementById('microphone-indicator').style.animation = '';
+    };
+    recognition.onaudiostart = function() {
+      document.getElementById('microphone-indicator').style.backgroundColor = '#FF4081';
+    };
+    recognition.onaudioend = function() {
+      document.getElementById('microphone-indicator').style.backgroundColor = '#ccc';
+    };
+    recognition.onresult = function(event) {
+      var result = event.results[event.results.length - 1][0].transcript.toLowerCase();
+      console.log('Recognized:', result);
+      checkWord(result);
+    };
+
+    // Check if the user input matches the random word
+    function checkWord(userInput) {
+      var wordElement = document.getElementById('word');
+      var correctElement = wordElement.querySelector('h2.correct');
+
+      if (correctElement) {
+        return;
+      }
+
+      if (userInput === randomWord.toLowerCase()) {
+        displayMessage("Congratulations!", true);
+        speakText("Congratulations! You have read " + randomWord + " correctly!", function() {
+          moveNext();
+        });
+      }
+    }
+
+    // Display message and flash "Correct!" if correct
+    function displayMessage(message, isCorrect) {
+      var wordElement = document.getElementById('word');
+
+      if (isCorrect) {
+        var correctElement = document.createElement('h2');
+        correctElement.textContent = message;
+        correctElement.classList.add('correct');
+        wordElement.appendChild(correctElement);
+      }
+    }
+
+    // Speak text using speech synthesis
+    function speakText(text, callback) {
+      var speechSynthesis = window.speechSynthesis;
+      var speechUtterance = new SpeechSynthesisUtterance(text);
+      speechUtterance.voice = getVoice('Microsoft Maisie Online (Natural) - English (United Kingdom)');
+      speechSynthesis.speak(speechUtterance);
+      speechUtterance.onend = callback;
+    }
+
+    // Get the voice by name
+    function getVoice(name) {
+      var voices = window.speechSynthesis.getVoices();
+      for (var i = 0; i < voices.length; i++) {
+        if (voices[i].name === name) {
+          return voices[i];
+        }
+      }
+      return null;
+    }
+
+    // Move to the next word
+    function moveNext() {
+      // Remove the previous word and message
+      var wordElement = document.getElementById('word');
+      wordElement.textContent = '';
+
+      // Get the next random word
+      wordIndex = (wordIndex + 1) % words.length;
+      randomWord = words[wordIndex];
+      wordElement.textContent = randomWord;
+      recognition.start();
+    }
+
+    // Toggle speech recognition
+    function toggleListening() {
+      if (recognition.isStarted) {
+        recognition.stop();
+        recognition.isStarted = false;
+      } else {
+        recognition.start();
+        recognition.isStarted = true;
+      }
+    }
+  </script>
+</body>
+</html>
